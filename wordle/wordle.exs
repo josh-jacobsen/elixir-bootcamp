@@ -39,16 +39,29 @@ defmodule Wordle do
   defp apply_colors(guess, word) do
     # Need to not apply colors twice if there are multiple letters in the word
     word_graphemes = String.graphemes(word)
-    guess_graphemes = String.graphemes(guess)
 
-    Enum.reduce(guess_graphemes, [], fn value, acc ->
+    Enum.reduce(String.graphemes(guess), [], fn value, acc ->
       if value in word_graphemes do
         case Enum.fetch(word_graphemes, length(acc)) do
           {:ok, element} ->
             if element == value do
               [IO.ANSI.format([:green, value]) | acc]
             else
-              [IO.ANSI.format([:yellow, value]) | acc]
+              my_count = Enum.count(word_graphemes, fn grapheme -> grapheme == value end)
+
+              acc_count_yellow =
+                Enum.count(acc, fn grapheme -> grapheme == IO.ANSI.format([:yellow, value]) end)
+
+              acc_count_green =
+                Enum.count(acc, fn grapheme -> grapheme == IO.ANSI.format([:green, value]) end)
+
+              total_count = acc_count_yellow + acc_count_green
+
+              if total_count < my_count do
+                [IO.ANSI.format([:yellow, value]) | acc]
+              else
+                [IO.ANSI.format([:black, value]) | acc]
+              end
             end
         end
       else

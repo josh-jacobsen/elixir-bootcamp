@@ -7,11 +7,11 @@ defmodule Wordle do
     words
     |> String.split()
     |> Enum.random()
-    |> IO.inspect()
+    # |> IO.inspect()
     |> game_loop(all_words, @guesses)
   end
 
-  def game_loop(word, all_words, 0) do
+  def game_loop(word, _all_words, 0) do
     IO.puts("You lost")
     IO.puts("The word was #{word}")
   end
@@ -21,15 +21,19 @@ defmodule Wordle do
     guess = prompt_user_for_guess()
 
     with :ok <- validate_guess_length(guess),
-         :ok <- validate_guess_is_word(guess, all_words) do
+         :ok <- validate_guess_is_in_all_words_list(guess, all_words),
+         :ok <-
+           validate_has_guess_won(guess, word) do
       guess
-      |> IO.inspect()
       |> apply_colors(word)
       |> Enum.reverse()
       |> IO.puts()
 
       game_loop(word, all_words, guesses_remaining - 1)
     else
+      {:ok, :won} ->
+        IO.puts("Congrats!! You won -- the word was #{word}")
+
       {:error, reason} ->
         IO.puts("Things blew up becasue #{reason}")
         game_loop(word, all_words, guesses_remaining)
@@ -37,7 +41,6 @@ defmodule Wordle do
   end
 
   defp apply_colors(guess, word) do
-    # Need to not apply colors twice if there are multiple letters in the word
     word_graphemes = String.graphemes(word)
 
     Enum.reduce(String.graphemes(guess), [], fn value, acc ->
@@ -47,17 +50,16 @@ defmodule Wordle do
             if element == value do
               [IO.ANSI.format([:green, value]) | acc]
             else
-              my_count = Enum.count(word_graphemes, fn grapheme -> grapheme == value end)
+              total_letters_in_word =
+                Enum.count(word_graphemes, fn grapheme -> grapheme == value end)
 
-              acc_count_yellow =
+              yellow_letters_in_acc =
                 Enum.count(acc, fn grapheme -> grapheme == IO.ANSI.format([:yellow, value]) end)
 
-              acc_count_green =
+              green_letters_in_acc =
                 Enum.count(acc, fn grapheme -> grapheme == IO.ANSI.format([:green, value]) end)
 
-              total_count = acc_count_yellow + acc_count_green
-
-              if total_count < my_count do
+              if yellow_letters_in_acc + green_letters_in_acc < total_letters_in_word do
                 [IO.ANSI.format([:yellow, value]) | acc]
               else
                 [IO.ANSI.format([:black, value]) | acc]
@@ -75,6 +77,16 @@ defmodule Wordle do
     |> String.trim()
   end
 
+  defp validate_has_guess_won(guess, word) do
+    if guess == word do
+      {:ok, :won}
+    else
+      :ok
+    end
+  end
+
+  # Tried a few different approaches to writing this validation function. Since String.length can't be used in a guard,
+  # and pattern matching on the input list would get verbose, this was the most elegant implementation I could come up with
   defp validate_guess_length(guess) do
     cond do
       String.length(guess) == 5 -> :ok
@@ -84,7 +96,19 @@ defmodule Wordle do
     end
   end
 
-  defp validate_guess_is_word(guess, all_words) do
+  # defp validate_guess_length(guess) when String.length(guess) < 5 do
+  #   {:error, :guess_too_short}
+  # end
+
+  # defp validate_guess_length([x1, x2, x3, x4, x5] = guess) do
+  #   :ok
+  # end
+
+  # defp validate_guess_length(guess) do
+  #   {:error, :guess_length_not_valid}
+  # end
+
+  defp validate_guess_is_in_all_words_list(guess, all_words) do
     word_list = String.split(all_words)
 
     if Enum.member?(word_list, guess) do

@@ -32,7 +32,7 @@ defmodule Wordle do
       game_loop(word, all_words, guesses_remaining - 1)
     else
       {:ok, :won} ->
-        IO.puts("Congrats!! You won -- the word was #{word}")
+        IO.puts("Congrats!! You won -- the word was #{IO.ANSI.format([:green, word])}")
 
       {:error, reason} ->
         IO.puts("Things blew up becasue #{reason}")
@@ -75,6 +75,7 @@ defmodule Wordle do
   defp prompt_user_for_guess() do
     IO.gets("Enter your guess: ")
     |> String.trim()
+    |> String.downcase()
   end
 
   defp validate_has_guess_won(guess, word) do

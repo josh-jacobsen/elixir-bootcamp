@@ -20,8 +20,7 @@ defmodule Wordle.Service do
     case Wordle.Validation.validate_guess(guess, all_words, target_word) do
       {:ok, guess} ->
         check_guess_against_target_word(guess, target_word)
-        |> Enum.reverse()
-        |> IO.puts()
+        |> Wordle.UI.display_result()
 
         game_loop(target_word, all_words, guesses_remaining - 1)
 
@@ -180,6 +179,12 @@ defmodule Wordle.UI do
     IO.gets("Enter your guess: ")
     |> String.trim()
     |> String.downcase()
+  end
+
+  def display_result(result) do
+    result
+    |> Enum.reverse()
+    |> IO.puts()
   end
 end
 

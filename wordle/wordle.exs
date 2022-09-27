@@ -4,8 +4,6 @@ defmodule Wordle.Service do
   @target_word_file_path "/Users/josh/Downloads/words.txt"
 
   def start() do
-    #  Abstraction level
-    # Module extraction
     target_word = load_target_word(@target_word_file_path)
     all_valid_words = load_all_valid_words(@all_valid_words_file_path)
 
@@ -21,7 +19,7 @@ defmodule Wordle.Service do
 
     case Wordle.Validation.validate_guess(guess, all_words, target_word) do
       {:ok, guess} ->
-        apply_colors(guess, target_word)
+        check_guess_against_target_word(guess, target_word)
         |> Enum.reverse()
         |> IO.puts()
 
@@ -36,37 +34,62 @@ defmodule Wordle.Service do
     end
   end
 
-  defp apply_colors(guess, word) do
-    word_graphemes = String.graphemes(word)
+  def check_guess_against_target_word(guess, target_word) do
+    target_word_graphemes = String.graphemes(target_word)
+    guess_graphemes = String.graphemes(guess)
+    check_guess_against_target(guess_graphemes, target_word_graphemes, [])
+  end
 
-    # No more than 3 layers deep
-    Enum.reduce(String.graphemes(guess), [], fn value, acc ->
-      if value in word_graphemes do
-        case Enum.fetch(word_graphemes, length(acc)) do
-          {:ok, element} ->
-            if element == value do
-              [IO.ANSI.format([:green, value]) | acc]
-            else
-              total_letters_in_word =
-                Enum.count(word_graphemes, fn grapheme -> grapheme == value end)
+  defp compare_letters_guess_vs_target_word(element, element, _target_word_graphemes, acc) do
+    [IO.ANSI.format([:green, element]) | acc]
+  end
 
-              yellow_letters_in_acc =
-                Enum.count(acc, fn grapheme -> grapheme == IO.ANSI.format([:yellow, value]) end)
+  defp compare_letters_guess_vs_target_word(first, element, target_word_graphemes, acc) do
+    total_letters_in_word =
+      Enum.count(target_word_graphemes, fn grapheme -> grapheme == first end)
 
-              green_letters_in_acc =
-                Enum.count(acc, fn grapheme -> grapheme == IO.ANSI.format([:green, value]) end)
+    yellow_letters_in_acc =
+      Enum.count(acc, fn grapheme ->
+        grapheme == IO.ANSI.format([:yellow, first])
+      end)
 
-              if yellow_letters_in_acc + green_letters_in_acc < total_letters_in_word do
-                [IO.ANSI.format([:yellow, value]) | acc]
-              else
-                [IO.ANSI.format([:red, value]) | acc]
-              end
-            end
-        end
-      else
-        [IO.ANSI.format([:red, value]) | acc]
+    green_letters_in_acc =
+      Enum.count(acc, fn grapheme ->
+        grapheme == IO.ANSI.format([:green, first])
+      end)
+
+    if yellow_letters_in_acc + green_letters_in_acc < total_letters_in_word do
+      [IO.ANSI.format([:yellow, first]) | acc]
+    else
+      [IO.ANSI.format([:red, first]) | acc]
+    end
+  end
+
+  def check_guess_against_target([], target_word_graphemes, acc) do
+    acc
+  end
+
+  def check_guess_against_target(guess_graphemes, target_word_graphemes, acc) do
+    [guess_letter | rest] = guess_graphemes
+
+    if guess_letter in target_word_graphemes do
+      case Enum.fetch(target_word_graphemes, length(acc)) do
+        {:ok, target_word_letter} ->
+          new_acc =
+            compare_letters_guess_vs_target_word(
+              guess_letter,
+              target_word_letter,
+              target_word_graphemes,
+              acc
+            )
+
+          check_guess_against_target(rest, target_word_graphemes, new_acc)
       end
-    end)
+    else
+      check_guess_against_target(rest, target_word_graphemes, [
+        IO.ANSI.format([:red, guess_letter]) | acc
+      ])
+    end
   end
 
   defp load_target_word(path) do
@@ -85,6 +108,8 @@ defmodule Wordle.Service do
 end
 
 defmodule Wordle.Validation do
+  @word_length 5
+
   def validate_guess(guess, all_words, target_word) do
     with :ok <- validate_guess_length(guess),
          :ok <- validate_guess_is_in_all_words_list(guess, all_words),
@@ -100,14 +125,16 @@ defmodule Wordle.Validation do
   end
 
   defp validate_guess_length(guess) do
-    # make this better
-    cond do
-      String.length(guess) == 5 -> :ok
-      String.length(guess) < 5 -> {:error, :guess_too_short}
-      String.length(guess) > 5 -> {:error, :guess_too_long}
-      true -> {:error, :invalid_guess}
-    end
+    validate_guess_correct_length(String.length(guess))
   end
+
+  defp validate_guess_correct_length(guess) when guess < @word_length,
+    do: {:error, :guess_too_short}
+
+  defp validate_guess_correct_length(guess) when guess > @word_length,
+    do: {:error, :guess_too_long}
+
+  defp validate_guess_correct_length(guess), do: :ok
 
   defp validate_guess_is_in_all_words_list(guess, all_words) do
     if Enum.member?(all_words, guess) do

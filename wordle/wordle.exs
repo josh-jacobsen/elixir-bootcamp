@@ -39,43 +39,39 @@ defmodule Wordle.Service do
     check_guess_against_target(guess_graphemes, target_word_graphemes, [])
   end
 
-  defp compare_letters_guess_vs_target_word(element, element, _target_word_graphemes, acc) do
-    [IO.ANSI.format([:green, element]) | acc]
+  defp compare_letters_in_guess_vs_target_word(letter, letter, _target_word_graphemes, acc) do
+    [IO.ANSI.format([:green, letter]) | acc]
   end
 
-  defp compare_letters_guess_vs_target_word(first, element, target_word_graphemes, acc) do
+  defp compare_letters_in_guess_vs_target_word(letter, _element, target_word_graphemes, acc) do
     total_letters_in_word =
-      Enum.count(target_word_graphemes, fn grapheme -> grapheme == first end)
+      Enum.count(target_word_graphemes, fn grapheme -> grapheme == letter end)
 
     yellow_letters_in_acc =
       Enum.count(acc, fn grapheme ->
-        grapheme == IO.ANSI.format([:yellow, first])
+        grapheme == IO.ANSI.format([:yellow, letter])
       end)
 
     green_letters_in_acc =
       Enum.count(acc, fn grapheme ->
-        grapheme == IO.ANSI.format([:green, first])
+        grapheme == IO.ANSI.format([:green, letter])
       end)
 
     if yellow_letters_in_acc + green_letters_in_acc < total_letters_in_word do
-      [IO.ANSI.format([:yellow, first]) | acc]
+      [IO.ANSI.format([:yellow, letter]) | acc]
     else
-      [IO.ANSI.format([:red, first]) | acc]
+      [IO.ANSI.format([:red, letter]) | acc]
     end
   end
 
-  def check_guess_against_target([], target_word_graphemes, acc) do
-    acc
-  end
+  def check_guess_against_target([], _target_word_graphemes, acc), do: acc
 
-  def check_guess_against_target(guess_graphemes, target_word_graphemes, acc) do
-    [guess_letter | rest] = guess_graphemes
-
+  def check_guess_against_target([guess_letter | rest], target_word_graphemes, acc) do
     if guess_letter in target_word_graphemes do
       case Enum.fetch(target_word_graphemes, length(acc)) do
         {:ok, target_word_letter} ->
           new_acc =
-            compare_letters_guess_vs_target_word(
+            compare_letters_in_guess_vs_target_word(
               guess_letter,
               target_word_letter,
               target_word_graphemes,
@@ -112,7 +108,7 @@ defmodule Wordle.Validation do
   def validate_guess(guess, all_words, target_word) do
     with :ok <- validate_guess_length(guess),
          :ok <- validate_guess_is_in_all_words_list(guess, all_words),
-         :in_progress <- has_guess_won(guess, target_word) do
+         :in_progress <- guess_won(guess, target_word) do
       {:ok, guess}
     else
       :won ->
@@ -133,7 +129,7 @@ defmodule Wordle.Validation do
   defp validate_guess_correct_length(guess) when guess > @word_length,
     do: {:error, :guess_too_long}
 
-  defp validate_guess_correct_length(guess), do: :ok
+  defp validate_guess_correct_length(_guess), do: :ok
 
   defp validate_guess_is_in_all_words_list(guess, all_words) do
     if Enum.member?(all_words, guess) do
@@ -143,8 +139,8 @@ defmodule Wordle.Validation do
     end
   end
 
-  defp has_guess_won(target_word, target_word), do: :won
-  defp has_guess_won(_, _), do: :in_progress
+  defp guess_won(target_word, target_word), do: :won
+  defp guess_won(_, _), do: :in_progress
 end
 
 defmodule Wordle.UI do

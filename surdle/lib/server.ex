@@ -7,20 +7,18 @@ defmodule Surdle.Server do
   use GenServer
 
   def start_link(_opts) do
-    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+    GenServer.start_link(__MODULE__, %{target_word: nil}, name: __MODULE__)
   end
 
   def init(state) do
-    IO.puts("hello world")
-    {:ok, state}
-  end
+    case File.read(@all_valid_words_file_path) do
+      {:ok, words} ->
+        all_words = String.split(words)
+        {:ok, Map.put(state, :all_words, all_words)}
 
-  def echo(pid \\ __MODULE__, data) do
-    GenServer.call(pid, {:data, data})
-  end
-
-  def handle_call({:data, data}, _from, state) do
-    {:reply, state, data}
+      error ->
+        error
+    end
   end
 
   def handle_call(:pick_random_word, __from, state) do
@@ -31,20 +29,18 @@ defmodule Surdle.Server do
       |> String.split()
       |> Enum.random()
 
-    {:reply, target_word, state}
+    IO.inspect(state, label: "state")
+    {:reply, target_word, %{state | target_word: target_word}}
   end
 
   def handle_call({:validate_guess, guess, target_word}, _from, state) do
-    IO.puts("Validating guess: #{guess}")
-    IO.puts("target word is #{target_word}")
-    {:ok, words} = File.read(@all_valid_words_file_path)
+    IO.inspect(state, label: "state")
 
-    all_words = String.split(words)
-    validation_result = validate(all_words, guess, target_word)
+    validation_result = validate(state.all_words, guess, state.target_word)
 
     case validation_result do
       {:ok, guess} ->
-        {:reply, :ok, state}
+        {:reply, {:ok, guess}, state}
 
       :won ->
         {:reply, :won, state}
@@ -54,16 +50,77 @@ defmodule Surdle.Server do
     end
   end
 
+  def handle_call({:score, guess, target_word}, _from, state) do
+    result = score_game(guess, target_word)
+    # IO.inspect(result, label: "result server side")
+    {:reply, result, state}
+  end
+
   def pick_random_word(pid \\ __MODULE__) do
     GenServer.call(pid, :pick_random_word)
   end
 
   def validate_guess(pid \\ __MODULE__, guess, target_word) do
-    IO.puts("got here")
     GenServer.call(pid, {:validate_guess, guess, target_word})
   end
 
-  def validate(all_words, guess, target_word) do
+  def score(pid \\ __MODULE__, guess, target_word) do
+    GenServer.call(pid, {:score, guess, target_word})
+  end
+
+  defp score_game(guess, target_word) do
+    target_word_graphemes = String.graphemes(target_word)
+    guess_graphemes = String.graphemes(guess)
+    recurse(guess_graphemes, target_word_graphemes, [])
+  end
+
+  defp recurse([], _target_word_graphemes, acc), do: acc
+
+  defp recurse([guess_letter | rest], target_word_graphemes, acc) do
+    if guess_letter in target_word_graphemes do
+      target_word_letter = Enum.at(target_word_graphemes, length(acc))
+
+      new_acc =
+        compare_letters(
+          guess_letter,
+          target_word_letter,
+          target_word_graphemes,
+          acc
+        )
+
+      recurse(rest, target_word_graphemes, new_acc)
+    else
+      recurse(rest, target_word_graphemes, [{:wrong, guess_letter} | acc])
+    end
+  end
+
+  defp compare_letters(
+         letter,
+         letter,
+         _target_word_graphemes,
+         acc
+       ) do
+    [{:correct, letter} | acc]
+  end
+
+  defp compare_letters(
+         letter,
+         _element,
+         target_word_graphemes,
+         acc
+       ) do
+    total_letters_in_word = Enum.count(target_word_graphemes, &(&1 == letter))
+    yellow_letters_in_acc = Enum.count(acc, &(&1 == {:wrong_place, letter}))
+    green_letters_in_acc = Enum.count(acc, &(&1 == {:correct, letter}))
+
+    if yellow_letters_in_acc + green_letters_in_acc < total_letters_in_word do
+      [{:wrong_place, letter} | acc]
+    else
+      [{:wrong, letter} | acc]
+    end
+  end
+
+  defp validate(all_words, guess, target_word) do
     with :ok <- validate_guess_length(guess),
          :ok <- validate_guess_is_in_all_words_list(guess, all_words),
          :in_progress <- guess_won(guess, target_word) do

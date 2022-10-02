@@ -22,14 +22,18 @@ defmodule Surdle.Client do
     guess = prompt_user_for_guess(remaining_guesses)
 
     case Server.validate_guess(guess, target_word) do
-      :ok ->
+      {:ok, guess} ->
+        guess
+        |> Server.score(target_word)
+        |> display_result()
+
         game_loop(target_word, remaining_guesses - 1)
 
       :won ->
         IO.puts("You won")
 
       {:failed_validation, reason} ->
-        IO.puts("Validation failed because: #{reason}")
+        inform_user_of_error(reason)
         game_loop(target_word, remaining_guesses)
     end
   end
@@ -40,5 +44,36 @@ defmodule Surdle.Client do
     IO.gets("Enter your guess: ")
     |> String.trim()
     |> String.downcase()
+  end
+
+  def display_result(result) do
+    result
+    |> colorize()
+    |> Enum.reverse()
+    |> IO.puts()
+  end
+
+  defp colorize(result) do
+    Enum.map(result, fn
+      {:correct, letter} -> IO.ANSI.format([:green, letter])
+      {:wrong_place, letter} -> IO.ANSI.format([:yellow, letter])
+      {:wrong, letter} -> IO.ANSI.format([:red, letter])
+    end)
+  end
+
+  def inform_user_of_error(reason) do
+    case reason do
+      :guess_too_short ->
+        IO.puts("The guess was too short")
+
+      :guess_too_long ->
+        IO.puts("The guess was too long")
+
+      :guess_not_valid_word ->
+        IO.puts("That isn't a valid word")
+
+      _ ->
+        IO.puts("There was an issue with your guess. Please check the input and try again")
+    end
   end
 end

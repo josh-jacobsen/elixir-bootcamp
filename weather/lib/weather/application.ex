@@ -8,7 +8,9 @@ defmodule Weather.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      Weather.Server
+      Weather.Controller,
+      Weather.ExternalAPI.child_spec()
+
       # Starts a worker by calling: Weather.Worker.start_link(arg)
       # {Weather.Worker, arg}
     ]

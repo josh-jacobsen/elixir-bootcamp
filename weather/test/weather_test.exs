@@ -1,8 +1,7 @@
 defmodule WeatherTest do
   use ExUnit.Case
-  doctest Weather
 
-  test "greets the world" do
-    assert Weather.hello() == :world
+  test "gets weather for Takapuna" do
+    assert Weather.APIClient.get_current_weather_for_location("tapakuna") == "clear"
   end
 end

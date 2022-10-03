@@ -1,3 +1,4 @@
 import Config
 
-config :weather, :http_client, Finch
+config :weather,
+  api_key: "ZSZ4AJSLRE4WYN3NSVY9MEQ8H"

@@ -13,17 +13,20 @@ defmodule Weather.ExternalAPI do
   # Wrap in function
   #  get_env, default to finch, finch mock with 1 function (request)
   defp request(request) do
+    IO.inspect(request, label: "Request")
     # finch = Application.get_env(:my_app, :http_client)
     # finch.request(request, __MODULE__)
-    http_client = Application.fetch_env!(:weather, :http_client)
+    http_client = Application.get_env(:weather, :http_client, Finch)
 
     http_client.request(request, __MODULE__)
   end
 
   defp get_weather_report(location) do
+    api_key = Application.fetch_env!(:weather, :api_key)
+
     :get
     |> Finch.build(
-      "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/#{location}?unitGroup=metric&key=ZSZ4AJSLRE4WYN3NSVY9MEQ8H&contentType=json"
+      "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/#{location}?unitGroup=metric&key=#{api_key}&contentType=json"
     )
     |> request()
   end

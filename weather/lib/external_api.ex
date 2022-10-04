@@ -26,18 +26,11 @@ defmodule Weather.ExternalAPI do
   defp get_weather_report(location) do
     api_key = Application.fetch_env!(:weather, :api_key)
 
-    finchRequest =
-      :get
-      |> Finch.build(
-        "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/#{location}?unitGroup=metric&key=#{api_key}&contentType=json"
-      )
-
-    # IO.inspect(finchRequest, label: "Finch request")
-
-    result = make_request(finchRequest)
-
-    # IO.inspect(result, label: "result from API call")
-    result
+    :get
+    |> Finch.build(
+      "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/#{location}?unitGroup=metric&key=#{api_key}&contentType=json"
+    )
+    |> make_request()
   end
 
   # @spec extract_current_conditions({:error, _}) :: String.t()

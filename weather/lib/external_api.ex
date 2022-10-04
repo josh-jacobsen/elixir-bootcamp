@@ -4,9 +4,6 @@ defmodule Weather.ExternalAPI do
 
   @behaviour Weather.ExternalAPIBehaviour
 
-  #  Make behaviour that takes request and returns response
-  # @callback request(Request.t()) :: {:ok, result :: Response} | {:error, reason :: term}
-
   def child_spec do
     {
       Finch,

@@ -13,10 +13,6 @@ defmodule Weather.Controller do
     GenServer.start_link(__MODULE__, @initial_state, name: __MODULE__)
   end
 
-  def hello() do
-    :world
-  end
-
   def init(state) do
     # TODO: Move to View and add validation
     user_input = IO.gets("What location would you like the weather for? ")
@@ -38,13 +34,4 @@ defmodule Weather.Controller do
 
     {:noreply, state}
   end
-
-  # def handle_info(:tick, state) do
-  #   View.countdown_to_getting_weather(state.location, state.count)
-
-  #   Process.send_after(self(), :tick, @one_second)
-
-  #   current_count = state.count
-  #   {:noreply, %{state | count: current_count - 1}}
-  # end
 end

@@ -2,8 +2,6 @@ defmodule Weather.ExternalAPI do
   alias Finch.Response
   alias Finch.Request
 
-  @behaviour Weather.ExternalAPIBehaviour
-
   def child_spec do
     {
       Finch,
@@ -17,7 +15,7 @@ defmodule Weather.ExternalAPI do
     http_client.request(request, __MODULE__)
   end
 
-  @spec get_current_weather_for_location(String.t()) :: String.t()
+  # @spec get_current_weather_for_location(String.t()) :: String.t()
   def get_current_weather_for_location(location) do
     get_weather_report(location)
     |> extract_current_conditions()

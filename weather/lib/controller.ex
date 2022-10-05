@@ -7,7 +7,7 @@ defmodule Weather.Controller do
   alias Weather.{View, APIClient}
 
   @interval_in_milliseconds 1000
-  @weather_signature :weather
+  @weather_callback_signature :weather
 
   @initial_state %{
     location: nil
@@ -24,7 +24,7 @@ defmodule Weather.Controller do
   def init(state) do
     location = View.prompt_user_for_location()
 
-    reschedule_request(@weather_signature, @interval_in_milliseconds)
+    reschedule_callback(@weather_callback_signature, @interval_in_milliseconds)
 
     {:ok, %{state | location: location}}
   end
@@ -32,12 +32,12 @@ defmodule Weather.Controller do
   @impl true
   def handle_info(:weather, state) do
     handle_weather_request(state.location)
-    reschedule_request(@weather_signature, @interval_in_milliseconds)
+    reschedule_callback(@weather_callback_signature, @interval_in_milliseconds)
     {:noreply, state}
   end
 
-  defp reschedule_request(weather_signature, interval) do
-    Process.send_after(self(), weather_signature, interval)
+  defp reschedule_callback(weather_callback_signature, interval) do
+    Process.send_after(self(), weather_callback_signature, interval)
   end
 
   defp handle_weather_request(location) do

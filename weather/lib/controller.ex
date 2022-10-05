@@ -4,7 +4,7 @@ defmodule Weather.Controller do
   and then display the results
   """
 
-  alias Weather.{View, ExternalAPI}
+  alias Weather.{View, APIClient}
 
   @interval_in_milliseconds 1000
 
@@ -34,7 +34,7 @@ defmodule Weather.Controller do
     #  dont use get in function name
 
     # extract these into function
-    case ExternalAPI.get_current_weather_for_location(state.location) do
+    case APIClient.get_current_weather_for_location(state.location) do
       {:ok, weather} -> View.display_weather_at_location(weather, state.location)
       {:error, reason} -> View.display_error(reason)
     end

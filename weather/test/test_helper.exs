@@ -1,5 +1,5 @@
 ExUnit.start()
 
-Mox.defmock(ExternalApiBehaviourMock, for: Weather.ExternalAPIBehaviour)
+Mox.defmock(APIClientBehaviourMock, for: Weather.APIClientBehaviour)
 
-Application.put_env(:weather, :http_client, ExternalApiBehaviourMock)
+Application.put_env(:weather, :http_client, APIClientBehaviourMock)

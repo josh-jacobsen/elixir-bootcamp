@@ -1,8 +1,8 @@
-defmodule Weather.ExternalAPI do
+defmodule Weather.APIClient do
   @moduledoc """
   Encapsulates the external API that provides the weather data
   """
-  alias Finch.{Response, Request}
+  alias Finch.{Response}
 
   @base_url "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/"
 
@@ -43,7 +43,7 @@ defmodule Weather.ExternalAPI do
     end
   end
 
-  defp extract_current_conditions({:error, reason}) do
+  defp extract_current_conditions({:error, _reason}) do
     {:error, :http_error}
   end
 end

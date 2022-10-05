@@ -4,7 +4,7 @@ defmodule WeatherTest do
   setup :verify_on_exit!
 
   test "Extracts conditions and temperature from response" do
-    expect(ExternalApiBehaviourMock, :request, fn _, _ ->
+    expect(APIClientBehaviourMock, :request, fn _, _ ->
       {:ok,
        %Finch.Response{
          status: 200,
@@ -13,21 +13,21 @@ defmodule WeatherTest do
        }}
     end)
 
-    assert Weather.ExternalAPI.get_current_weather_for_location("tapakuna") ==
+    assert Weather.APIClient.get_current_weather_for_location("tapakuna") ==
              {:ok, %{conditions: "rain, partially cloudy", temp: 15.6}}
   end
 
   test "Handles error from API" do
-    expect(ExternalApiBehaviourMock, :request, fn _, _ ->
+    expect(APIClientBehaviourMock, :request, fn _, _ ->
       {:error, "uh oh, spagetti ohs"}
     end)
 
-    assert Weather.ExternalAPI.get_current_weather_for_location("tapakuna") ==
+    assert Weather.APIClient.get_current_weather_for_location("tapakuna") ==
              {:error, :http_error}
   end
 
   test "Handles missing temperature data" do
-    expect(ExternalApiBehaviourMock, :request, fn _, _ ->
+    expect(APIClientBehaviourMock, :request, fn _, _ ->
       {:ok,
        %Finch.Response{
          status: 200,
@@ -35,7 +35,7 @@ defmodule WeatherTest do
        }}
     end)
 
-    assert Weather.ExternalAPI.get_current_weather_for_location("tapakuna") ==
+    assert Weather.APIClient.get_current_weather_for_location("tapakuna") ==
              {:error, :unexpected_format}
   end
 end

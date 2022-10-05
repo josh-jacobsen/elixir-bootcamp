@@ -7,6 +7,7 @@ defmodule Weather.Controller do
   alias Weather.{View, APIClient}
 
   @interval_in_milliseconds 1000
+  @weather_signature :weather
 
   @initial_state %{
     location: nil
@@ -23,25 +24,26 @@ defmodule Weather.Controller do
   def init(state) do
     location = View.prompt_user_for_location()
 
-    Process.send_after(self(), :tick, @interval_in_milliseconds)
+    reschedule_request(@weather_signature, @interval_in_milliseconds)
 
     {:ok, %{state | location: location}}
   end
 
   @impl true
-  def handle_info(:tick, state) do
-    # TODO: levels of abstraction (refactor into handler function and calling function)
-    #  dont use get in function name
+  def handle_info(:weather, state) do
+    handle_weather_request(state.location)
+    reschedule_request(@weather_signature, @interval_in_milliseconds)
+    {:noreply, state}
+  end
 
-    # extract these into function
-    case APIClient.get_current_weather_for_location(state.location) do
-      {:ok, weather} -> View.display_weather_at_location(weather, state.location)
+  defp reschedule_request(weather_signature, interval) do
+    Process.send_after(self(), weather_signature, interval)
+  end
+
+  defp handle_weather_request(location) do
+    case APIClient.get_current_weather_for_location(location) do
+      {:ok, weather} -> View.display_weather_at_location(weather, location)
       {:error, reason} -> View.display_error(reason)
     end
-
-    # Extract into different function thats also called from L26
-    Process.send_after(self(), :tick, @interval_in_milliseconds)
-
-    {:noreply, state}
   end
 end

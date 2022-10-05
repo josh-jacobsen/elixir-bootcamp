@@ -1,4 +1,6 @@
 defmodule Weather.ExternalAPIBehaviour do
+  @moduledoc "Behaviour for API test mocks"
+
   alias Finch.Response
   alias Finch.Request
 

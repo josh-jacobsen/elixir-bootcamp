@@ -7,7 +7,7 @@ defmodule Weather.ExternalAPI do
   @base_url "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/"
 
   @spec get_current_weather_for_location(String.t()) ::
-          %{conditions: String.t(), temp: String.t()} | {:error, reason :: String.t()}
+          {:ok, %{conditions: String.t(), temp: String.t()}} | {:error, reason :: term()}
   def get_current_weather_for_location(location) do
     fetch_weather_report(location)
     |> extract_current_conditions()

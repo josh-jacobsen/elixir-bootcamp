@@ -14,7 +14,7 @@ defmodule WeatherTest do
     end)
 
     assert Weather.ExternalAPI.get_current_weather_for_location("tapakuna") ==
-             %{conditions: "rain, partially cloudy", temp: 15.6}
+             {:ok, %{conditions: "rain, partially cloudy", temp: 15.6}}
   end
 
   test "Handles error from API" do
@@ -23,7 +23,7 @@ defmodule WeatherTest do
     end)
 
     assert Weather.ExternalAPI.get_current_weather_for_location("tapakuna") ==
-             {:error, "uh oh, spagetti ohs"}
+             {:error, :http_error}
   end
 
   test "Handles missing temperature data" do
@@ -36,6 +36,6 @@ defmodule WeatherTest do
     end)
 
     assert Weather.ExternalAPI.get_current_weather_for_location("tapakuna") ==
-             {:error, "Message body did not match expected format"}
+             {:error, :unexpected_format}
   end
 end

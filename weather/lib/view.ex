@@ -18,4 +18,17 @@ defmodule Weather.View do
     |> String.trim()
     |> String.downcase()
   end
+
+  def display_error(reason) do
+    case reason do
+      :http_error ->
+        IO.puts("The operation failed due to an HTTP error. Please check the input and try again")
+
+      :unexpected_format ->
+        IO.puts("The body of the response was in an unexpected format")
+
+      _ ->
+        IO.puts("The operation failed. Please check the input and try again")
+    end
+  end
 end
